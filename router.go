@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/gorilla/websocket"
+	r "github.com/dancannon/gorethink"
 	"net/http"
 )
 
@@ -16,11 +17,13 @@ var upgrader = websocket.Upgrader{
 
 type Router struct {
 	rules map[string]Handler
+	session *r.Session
 }
 
-func NewRouter() *Router{
+func NewRouter(session *r.Session) *Router{
 	return &Router{
 		rules: make(map[string]Handler),
+		session: session,
 	}
 }
 func (r *Router) Handle(msgName string, handler Handler){
@@ -39,7 +42,7 @@ func (e *Router) ServeHTTP(w http.ResponseWriter, r *http.Request){
 		fmt.Fprint(w, err.Error())
 		return
 	}
-	client := NewClient(socket, e.FindHandler)
+	client := NewClient(socket, e.FindHandler, e.session)
 	go client.Write()
 	client.Read()
 }
